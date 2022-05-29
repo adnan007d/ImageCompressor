@@ -10,7 +10,7 @@ class ImageCard : public QWidget
 {
     Q_OBJECT
 public:
-    ImageCard(const QImage& image, QWidget *parent = nullptr);
+    ImageCard(const QImage &image, QWidget *parent = nullptr);
 
 private:
     QImage imageRef;
@@ -21,7 +21,6 @@ private:
     QVBoxLayout *cardLayout = nullptr;
 
 signals:
-
 };
 
 #endif // IMAGECARD_H

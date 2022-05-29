@@ -1,7 +1,6 @@
 #include <QtWidgets>
 #include "flowlayout.h"
 
-
 FlowLayout::FlowLayout(QWidget *parent, int margin, int hSpacing, int vSpacing)
     : QLayout(parent), m_hSpace(hSpacing), m_vSpace(vSpacing)
 {
@@ -28,18 +27,24 @@ void FlowLayout::addItem(QLayoutItem *item)
 
 int FlowLayout::horizontalSpacing() const
 {
-    if (m_hSpace >= 0) {
+    if (m_hSpace >= 0)
+    {
         return m_hSpace;
-    } else {
+    }
+    else
+    {
         return smartSpacing(QStyle::PM_LayoutHorizontalSpacing);
     }
 }
 
 int FlowLayout::verticalSpacing() const
 {
-    if (m_vSpace >= 0) {
+    if (m_vSpace >= 0)
+    {
         return m_vSpace;
-    } else {
+    }
+    else
+    {
         return smartSpacing(QStyle::PM_LayoutVerticalSpacing);
     }
 }
@@ -63,7 +68,7 @@ QLayoutItem *FlowLayout::takeAt(int index)
 
 Qt::Orientations FlowLayout::expandingDirections() const
 {
-    return { };
+    return {};
 }
 
 bool FlowLayout::hasHeightForWidth() const
@@ -108,7 +113,8 @@ int FlowLayout::doLayout(const QRect &rect, bool testOnly) const
     int y = effectiveRect.y();
     int lineHeight = 0;
 
-    for (QLayoutItem *item : qAsConst(itemList)) {
+    for (QLayoutItem *item : qAsConst(itemList))
+    {
         const QWidget *wid = item->widget();
         int spaceX = horizontalSpacing();
         if (spaceX == -1)
@@ -120,7 +126,8 @@ int FlowLayout::doLayout(const QRect &rect, bool testOnly) const
                 QSizePolicy::PushButton, QSizePolicy::PushButton, Qt::Vertical);
 
         int nextX = x + item->sizeHint().width() + spaceX;
-        if (nextX - spaceX > effectiveRect.right() && lineHeight > 0) {
+        if (nextX - spaceX > effectiveRect.right() && lineHeight > 0)
+        {
             x = effectiveRect.x();
             y = y + lineHeight + spaceY;
             nextX = x + item->sizeHint().width() + spaceX;
@@ -139,12 +146,17 @@ int FlowLayout::doLayout(const QRect &rect, bool testOnly) const
 int FlowLayout::smartSpacing(QStyle::PixelMetric pm) const
 {
     QObject *parent = this->parent();
-    if (!parent) {
+    if (!parent)
+    {
         return -1;
-    } else if (parent->isWidgetType()) {
+    }
+    else if (parent->isWidgetType())
+    {
         QWidget *pw = static_cast<QWidget *>(parent);
         return pw->style()->pixelMetric(pm, nullptr, pw);
-    } else {
+    }
+    else
+    {
         return static_cast<QLayout *>(parent)->spacing();
     }
 }

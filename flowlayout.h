@@ -4,8 +4,6 @@
 #include <QStyle>
 #include <QLayout>
 
-
-
 // From QT docs
 // https://doc-snapshots.qt.io/qt6-dev/qtwidgets-layouts-flowlayout-example.html
 class FlowLayout : public QLayout
@@ -35,7 +33,6 @@ public:
     void setGeometry(const QRect &rect) override;
     QSize sizeHint() const override;
     QLayoutItem *takeAt(int index) override;
-
 };
 
 #endif // FLOWLAYOUT_H

@@ -28,12 +28,17 @@ public:
     MainWindow(QWidget *parent = nullptr);
     ~MainWindow();
 
+public slots:
+    void renderImageCards(QVector<QImage> _images, qint64 size);
+    void on_OpenButtonPressed();
+    void on_SaveButtonPressed();
+    void writeFinished(qint64 size);
+
 private:
     void InitComponents();
     void resizeEvent(QResizeEvent *event);
     void InitSignalSlots();
-    void renderCards(const QStringList &fileNames);
-
+    QString getFileSizeInUnits(const qint64 &size);
 
     Ui::MainWindow *ui;
 
@@ -48,12 +53,13 @@ private:
     QWidget *actionWidget = nullptr;
     QPushButton *openButton = nullptr;
     QPushButton *saveButton = nullptr;
-    QLineEdit  *filePathInput = nullptr;
+    QLineEdit *filePathInput = nullptr;
     QPushButton *fileDialogButton = nullptr;
 
     FlowLayout *leftFlowLayout = nullptr;
     QScrollArea *leftScrollArea = nullptr;
     QWidget *leftScrollAreaWidget = nullptr;
+    QLabel *fileSizeLabel = nullptr;
 
     QFrame *frameRight = nullptr;
     QVBoxLayout *rightFrameLayout = nullptr;
@@ -62,18 +68,12 @@ private:
 
     void setLoading(bool loading);
 
-
-//    FlowLayout *rightFlowLayout = nullptr;
-//    QScrollArea *rightScrollArea = nullptr;
-//    QWidget *rightScrollAreaWidget = nullptr;
-
     QVector<QImage> images{};
     QStringList fileNames{};
 
-    uint64_t initialSize = 0;
+    qint64 initialSize = 0;
 
     int defaultValue = 80;
     char defaultValueS[3] = "80";
-
 };
 #endif // MAINWINDOW_H

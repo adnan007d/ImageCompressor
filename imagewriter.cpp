@@ -1,0 +1,40 @@
+#include "imagewriter.h"
+
+#include <QFileInfo>
+#include <QImageWriter>
+
+ImageWriter::ImageWriter(CompressOptions _options) : options{qMove(_options)}
+{
+}
+
+void ImageWriter::WriteImages()
+{
+    qint64 size = 0;
+    QFileInfo f = QFileInfo();
+
+    QVector<QImage> &images = options.images;
+    QStringList &fileNames = options.fileNames;
+    QString &destination = options.destinationDirectory;
+
+    for (int i = 0; i < images.size(); ++i)
+    {
+        f.setFile(fileNames[i]);
+        const QString destinationPath = destination + "/COMPRESSED" + f.fileName();
+        f.setFile(destinationPath);
+        QImageWriter writer = QImageWriter(destinationPath);
+        writer.setQuality(options.quality);
+        writer.write(images[i].convertedTo(QImage::Format::Format_RGB16));
+        size += f.size();
+    }
+    emit finished(size);
+}
+
+void ImageWriter::start()
+{
+    WriteImages();
+}
+
+void ImageWriter::quit()
+{
+    emit finished({});
+}

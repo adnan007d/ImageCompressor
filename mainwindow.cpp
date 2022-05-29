@@ -1,4 +1,6 @@
 #include "imagecard.h"
+#include "imagereader.h"
+#include "imagewriter.h"
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
 #include <QFileDialog>
@@ -7,28 +9,18 @@
 #include <QImageWriter>
 #include <QIntValidator>
 #include <QMessageBox>
-#include <QtConcurrent>
+#include <QThread>
 
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent), ui(new Ui::MainWindow)
 {
     ui->setupUi(this);
-    //        QImageReader reader = QImageReader("/home/barty/Desktop/1.png");
-    //        QImage img = reader.read();
-
-    //        img.convertTo(QImage::Format::Format_RGB16);
-    //        qDebug() << img;
-
-    //        QImageWriter writer = QImageWriter("new.jpg");
-    //        writer.setQuality(20);
-    //        writer.write(img);
-
     this->setMinimumWidth(850);
 
+    loadingGif = new QMovie(":loading.gif", "gif", this);
 
     InitComponents();
     InitSignalSlots();
-
 }
 
 MainWindow::~MainWindow()
@@ -36,13 +28,72 @@ MainWindow::~MainWindow()
     delete ui;
 }
 
+void MainWindow::renderImageCards(QVector<QImage> _images, qint64 size)
+{
+    images = qMove(_images);
+    initialSize = qMove(size);
+
+    for (const auto &image : images)
+    {
+        ImageCard *card = new ImageCard(image, frameLeft);
+        leftFlowLayout->addWidget(card);
+    }
+    fileSizeLabel->setText(getFileSizeInUnits(initialSize));
+    setLoading(false);
+}
+
+void MainWindow::on_OpenButtonPressed()
+{
+    fileNames = QFileDialog::getOpenFileNames(this, "Open Image Files", QDir::homePath(), "Image Files *.png *.jpg *.jpeg");
+    if (!fileNames.isEmpty())
+    {
+        QThread *imageThread = new QThread(this);
+        ImageReader *readerWorker = new ImageReader(fileNames);
+
+        readerWorker->moveToThread(imageThread);
+
+        connect(imageThread, &QThread::started, readerWorker, &ImageReader::start);
+        connect(readerWorker, &ImageReader::finished, this, &MainWindow::renderImageCards);
+        connect(imageThread, &QThread::finished, readerWorker, &ImageReader::deleteLater);
+        setLoading(true);
+        imageThread->start();
+    }
+}
+
+void MainWindow::on_SaveButtonPressed()
+{
+    QThread *imageThread = new QThread(this);
+    ImageWriter *writerWorker = new ImageWriter({
+        .images = images,
+        .fileNames = fileNames,
+        .destinationDirectory = filePathInput->text(),
+        .quality = 100 - valueSlider->value(),
+        .convertPNG = false,
+    });
+
+    writerWorker->moveToThread(imageThread);
+    connect(imageThread, &QThread::started, writerWorker, &ImageWriter::start);
+    connect(writerWorker, &ImageWriter::finished, this, &MainWindow::writeFinished);
+    connect(imageThread, &QThread::finished, writerWorker, &ImageWriter::deleteLater);
+    setLoading(true);
+    imageThread->start();
+}
+
+void MainWindow::writeFinished(qint64 size)
+{
+    setLoading(false);
+
+    QMessageBox m = QMessageBox(this);
+    m.setIcon(QMessageBox::Information);
+    m.setWindowTitle("File Compressed Successfully");
+    m.setText("Files saved to <b>" + filePathInput->text() + "<b>\n New Size" + getFileSizeInUnits(size));
+    m.exec();
+}
+
 void MainWindow::InitComponents()
 {
-    // Both Frames
+    // Left Frame
     frameLeft = new QFrame(this);
-
-    //    frameLeft->setStyleSheet("background-color:white;");
-
 
     leftScrollArea = new QScrollArea(frameLeft);
     leftScrollAreaWidget = new QWidget(leftScrollArea);
@@ -55,12 +106,10 @@ void MainWindow::InitComponents()
 
     // Right Frame
     frameRight = new QFrame(this);
-//    frameRight->setStyleSheet("background-color:white;");
 
     rightFrameLayout = new QVBoxLayout(frameRight);
-    dataLabel = new QLabel(this);
-    rightFrameLayout->addWidget(dataLabel, 0, Qt::AlignCenter);
-
+    fileSizeLabel = new QLabel(this);
+    fileSizeLabel->setAlignment(Qt::AlignCenter);
 
     // Slider and inputs
     controlWidget = new QWidget(this);
@@ -105,8 +154,6 @@ void MainWindow::InitComponents()
     actionLayout->addWidget(saveButton);
     actionLayout->addWidget(filePathInput);
     actionLayout->addWidget(fileDialogButton);
-
-
 }
 
 void MainWindow::InitSignalSlots()
@@ -116,95 +163,49 @@ void MainWindow::InitSignalSlots()
     connect(compressInput, &QLineEdit::textChanged, this, [this](const QString &n)
             { valueSlider->setValue(n.toInt()); });
 
-    // Opening Files
-    connect(openButton, &QPushButton::clicked, this,
-    [this]()
-    {
-        fileNames = QFileDialog::getOpenFileNames(this, "Open Image Files", QDir::homePath(), "Image Files *.png *.jpg *.jpeg");
-        if(!fileNames.isEmpty())
-        {
-            renderCards(fileNames);
-        }
-        else
-        {
-            // TODO: Error Handling
-
-        }
-    });
-
-    // Saving Files
-    connect(saveButton, &QPushButton::clicked, this,
-    [this]()
-    {
-
-        QFileInfo f = QFileInfo();
-        setLoading(true);
-        for(int i = 0; i < images.size(); ++i)
-        {
-
-            f.setFile(fileNames[i]);
-            const QString destinationPath = filePathInput->text() + "/COMPRESSED" +  f.fileName();
-
-            QImageWriter writer = QImageWriter(destinationPath);
-            QImage _image = images[i].convertedTo(QImage::Format::Format_RGB16);
-
-            writer.setQuality(100 - valueSlider->value());
-            writer.write(_image);
-            qDebug() << "Done One";
-        }
-        setLoading(false);
-
-        QMessageBox m = QMessageBox(this);
-        m.setIcon(QMessageBox::Information);
-        m.setWindowTitle("File Compressed Successfully");
-        m.setText("Files saved to " + filePathInput->text());
-        m.exec();
-
-    });
+    connect(openButton, &QPushButton::clicked, this, &MainWindow::on_OpenButtonPressed);
+    connect(saveButton, &QPushButton::clicked, this, &MainWindow::on_SaveButtonPressed);
 
     // Selecting Destination Directory
     connect(fileDialogButton, &QPushButton::clicked, this,
-    [this]()
-    {
-     QString path = QFileDialog::getExistingDirectory(this, "Select Destination Folder", filePathInput->text());
-     if(!path.isNull())
-     {
-         filePathInput->setText(qMove(path));
-     }
-    });
+            [this]()
+            {
+                QString path = QFileDialog::getExistingDirectory(this, "Select Destination Folder", filePathInput->text());
+                if (!path.isNull())
+                {
+                    filePathInput->setText(qMove(path));
+                }
+            });
 }
 
-void MainWindow::renderCards(const QStringList &fileNames)
+QString MainWindow::getFileSizeInUnits(const qint64 &size)
 {
-    images.reserve(fileNames.size());
-    QFileInfo f = QFileInfo();
-    setLoading(true);
-    for (const auto &fileName : fileNames)
-    {
-        f.setFile(fileName);
-        initialSize += f.size();
-        QImageReader reader = QImageReader(fileName);
-        QImage img = reader.read();
-
-        images.push_back(img);
-        ImageCard *card = new ImageCard(qMove(img), frameLeft);
-        leftFlowLayout->addWidget(card);
-    }
-    setLoading(false);
-    qDebug() << static_cast<double>(initialSize) / 1000000 << "MB";
-
+    const double mb = 1000000.0;
+    if (initialSize > mb)
+        return QString::number(size / mb) + " MB";
+    else
+        return QString::number(size * 10 / mb) + " KB";
 }
 
 void MainWindow::setLoading(bool loading)
 {
-    if(loading)
+    if (loading)
     {
         qDebug() << "Loading...";
+        dataLabel = new QLabel(this);
+        dataLabel->setAlignment(Qt::AlignCenter);
+
         dataLabel->setText("Loading...");
+        dataLabel->setMovie(loadingGif);
+        rightFrameLayout->addWidget(dataLabel, 0, Qt::AlignCenter);
+        loadingGif->start();
     }
     else
     {
+        loadingGif->stop();
         dataLabel->setText("");
+        rightFrameLayout->removeWidget(dataLabel);
+        delete dataLabel;
     }
 }
 
@@ -223,13 +224,12 @@ void MainWindow::resizeEvent(QResizeEvent *event)
     // 70% height
     const int frameHeight = _5Height * 14;
 
-    //        qDebug() << width << ' ' << height << ' ' << _5Width << ' ' << _5Height << ' ' << _5Width * 8 << ' ' << _5Height * 16 << '\n';
     frameLeft->setGeometry(_5Width, 0, frameWidth, frameHeight);
     leftScrollArea->setGeometry(0, 0, frameWidth, frameHeight);
     frameRight->setGeometry(width - _5Width * 6 - _5Width, 0, _5Width * 6, frameHeight);
-//    rightScrollArea->setGeometry(0, 0, frameWidth, frameHeight);
+
+    fileSizeLabel->setGeometry(_5Width, frameHeight, frameWidth, 50);
 
     controlWidget->setGeometry(0, _5Height * 15, width, 100);
     actionWidget->setGeometry(_5Width, _5Height * 17, width - _5Width * 2, 100);
-    //    valueSlider->setGeometry(width / 2 - 100, _5Height * 15, 200, valueSlider->height());
 }

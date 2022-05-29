@@ -10,7 +10,7 @@ public:
     ImageViewer(const QImage &image);
 
 private:
-    const QImage& imageRef;
+    const QImage &imageRef;
     QLabel *imageLabel = nullptr;
 
     void resizeEvent(QResizeEvent *event);

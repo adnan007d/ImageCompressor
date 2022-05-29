@@ -11,14 +11,18 @@ CONFIG += c++17
 SOURCES += \
     flowlayout.cpp \
     imagecard.cpp \
+    imagereader.cpp \
     imageviewer.cpp \
+    imagewriter.cpp \
     main.cpp \
     mainwindow.cpp
 
 HEADERS += \
     flowlayout.h \
     imagecard.h \
+    imagereader.h \
     imageviewer.h \
+    imagewriter.h \
     mainwindow.h
 
 FORMS += \
