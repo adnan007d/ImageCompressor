@@ -28,6 +28,10 @@ public:
     MainWindow(QWidget *parent = nullptr);
     ~MainWindow();
 
+signals:
+    void doneReading();
+    void doneWriting();
+
 public slots:
     void renderImageCards(QVector<QImage> _images, qint64 size);
     void on_OpenButtonPressed();
@@ -66,6 +70,9 @@ private:
     QLabel *dataLabel = nullptr;
     QMovie *loadingGif = nullptr; // loading gif
 
+
+    void clearEverything();
+
     void setLoading(bool loading);
 
     QVector<QImage> images{};
@@ -73,7 +80,7 @@ private:
 
     qint64 initialSize = 0;
 
-    int defaultValue = 80;
-    char defaultValueS[3] = "80";
+    const int defaultValue = 80;
+    const char defaultValueS[3] = "80";
 };
 #endif // MAINWINDOW_H

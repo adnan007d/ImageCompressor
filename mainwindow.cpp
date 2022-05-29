@@ -10,6 +10,7 @@
 #include <QIntValidator>
 #include <QMessageBox>
 #include <QThread>
+#include <QDebug>
 
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent), ui(new Ui::MainWindow)
@@ -40,20 +41,25 @@ void MainWindow::renderImageCards(QVector<QImage> _images, qint64 size)
     }
     fileSizeLabel->setText(getFileSizeInUnits(initialSize));
     setLoading(false);
+    emit doneReading();
 }
 
 void MainWindow::on_OpenButtonPressed()
 {
-    fileNames = QFileDialog::getOpenFileNames(this, "Open Image Files", QDir::homePath(), "Image Files *.png *.jpg *.jpeg");
-    if (!fileNames.isEmpty())
+    QStringList _fileNames = QFileDialog::getOpenFileNames(this, "Open Image Files", QDir::homePath(), "Image Files *.png *.jpg *.jpeg");
+    if (!_fileNames.isEmpty())
     {
-        QThread *imageThread = new QThread(this);
+        clearEverything();
+
+        fileNames = qMove(_fileNames);
+        QThread *imageThread = new QThread;
         ImageReader *readerWorker = new ImageReader(fileNames);
 
         readerWorker->moveToThread(imageThread);
 
         connect(imageThread, &QThread::started, readerWorker, &ImageReader::start);
         connect(readerWorker, &ImageReader::finished, this, &MainWindow::renderImageCards);
+        connect(this, &MainWindow::doneReading, imageThread, &QThread::quit);
         connect(imageThread, &QThread::finished, readerWorker, &ImageReader::deleteLater);
         setLoading(true);
         imageThread->start();
@@ -62,7 +68,7 @@ void MainWindow::on_OpenButtonPressed()
 
 void MainWindow::on_SaveButtonPressed()
 {
-    QThread *imageThread = new QThread(this);
+    QThread *imageThread = new QThread;
     ImageWriter *writerWorker = new ImageWriter({
         .images = images,
         .fileNames = fileNames,
@@ -74,6 +80,7 @@ void MainWindow::on_SaveButtonPressed()
     writerWorker->moveToThread(imageThread);
     connect(imageThread, &QThread::started, writerWorker, &ImageWriter::start);
     connect(writerWorker, &ImageWriter::finished, this, &MainWindow::writeFinished);
+    connect(this, &MainWindow::doneWriting, imageThread, &QThread::quit);
     connect(imageThread, &QThread::finished, writerWorker, &ImageWriter::deleteLater);
     setLoading(true);
     imageThread->start();
@@ -83,11 +90,15 @@ void MainWindow::writeFinished(qint64 size)
 {
     setLoading(false);
 
-    QMessageBox m = QMessageBox(this);
-    m.setIcon(QMessageBox::Information);
-    m.setWindowTitle("File Compressed Successfully");
-    m.setText("Files saved to <b>" + filePathInput->text() + "<b>\n New Size" + getFileSizeInUnits(size));
-    m.exec();
+    emit doneWriting();
+    dataLabel = new QLabel(this);
+    dataLabel->setText("<b>Compression Done Successfully</b><br /> Saved to <i>/tmp</i><br />previous size = " + getFileSizeInUnits(initialSize) + "<br /> new size = " + getFileSizeInUnits(size) + "<br />Reduced: <b>" + getFileSizeInUnits(initialSize - size) + "</b>");
+    rightFrameLayout->addWidget(dataLabel);
+//    QMessageBox m = QMessageBox(this);
+//    m.setIcon(QMessageBox::Information);
+//    m.setWindowTitle("File Compressed Successfully");
+//    m.setText("Files saved to <b>" + filePathInput->text() + "<b>\n New Size" + getFileSizeInUnits(size));
+//    m.exec();
 }
 
 void MainWindow::InitComponents()
@@ -187,6 +198,27 @@ QString MainWindow::getFileSizeInUnits(const qint64 &size)
         return QString::number(size * 10 / mb) + " KB";
 }
 
+void MainWindow::clearEverything()
+{
+    initialSize = 0;
+    images.clear();
+    fileNames.clear();
+
+    QLayoutItem *item;
+    while ((item = leftFlowLayout->takeAt(0)))
+    {
+        delete item->widget();
+        delete item;
+    }
+
+    while ((item = rightFrameLayout->takeAt(0)))
+    {
+        delete item->widget();
+        delete item;
+    }
+
+}
+
 void MainWindow::setLoading(bool loading)
 {
     if (loading)
@@ -204,6 +236,7 @@ void MainWindow::setLoading(bool loading)
     {
         loadingGif->stop();
         dataLabel->setText("");
+        qDebug() << "Not Loading";
         rightFrameLayout->removeWidget(dataLabel);
         delete dataLabel;
     }

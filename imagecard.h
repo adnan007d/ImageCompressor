@@ -13,7 +13,7 @@ public:
     ImageCard(const QImage &image, QWidget *parent = nullptr);
 
 private:
-    QImage imageRef;
+    const QImage &imageRef;
 
     QLabel *imageLabel = nullptr;
     QPushButton *viewButton = nullptr;
