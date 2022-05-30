@@ -11,6 +11,7 @@
 #include <QMessageBox>
 #include <QThread>
 #include <QDebug>
+#include <QDesktopServices>
 
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent), ui(new Ui::MainWindow)
@@ -74,7 +75,7 @@ void MainWindow::on_SaveButtonPressed()
         .fileNames = fileNames,
         .destinationDirectory = filePathInput->text(),
         .quality = 100 - valueSlider->value(),
-        .convertPNG = false,
+        .convertPNG = pngCheckBox->isChecked(),
     });
 
     writerWorker->moveToThread(imageThread);
@@ -91,14 +92,21 @@ void MainWindow::writeFinished(qint64 size)
     setLoading(false);
 
     emit doneWriting();
-    dataLabel = new QLabel(this);
-    dataLabel->setText("<b>Compression Done Successfully</b><br /> Saved to <i>/tmp</i><br />previous size = " + getFileSizeInUnits(initialSize) + "<br /> new size = " + getFileSizeInUnits(size) + "<br />Reduced: <b>" + getFileSizeInUnits(initialSize - size) + "</b>");
+    dataLabel = new QLabel(frameRight);
+    dataLabel->setText(
+        "<b>Compression Done Successfully</b><br /> Saved to <a href='file://" +
+        filePathInput->text() + "'>/tmp</a><br />previous size = " +
+        getFileSizeInUnits(initialSize) + "<br /> new size = " +
+        getFileSizeInUnits(size) + "<br />Reduced: <b>" +
+        getFileSizeInUnits(initialSize - size) + "</b>");
+
+    QPushButton *resultOpenButton = new QPushButton("Open Folder", frameRight);
+
+    connect(resultOpenButton, &QPushButton::clicked, this, [this]()
+            { QDesktopServices::openUrl(QUrl::fromLocalFile(filePathInput->text())); });
+
     rightFrameLayout->addWidget(dataLabel);
-//    QMessageBox m = QMessageBox(this);
-//    m.setIcon(QMessageBox::Information);
-//    m.setWindowTitle("File Compressed Successfully");
-//    m.setText("Files saved to <b>" + filePathInput->text() + "<b>\n New Size" + getFileSizeInUnits(size));
-//    m.exec();
+    rightFrameLayout->addWidget(resultOpenButton);
 }
 
 void MainWindow::InitComponents()
@@ -136,11 +144,15 @@ void MainWindow::InitComponents()
     compressInput->setValidator(new QIntValidator(0, 99, this));
     compressInput->setFixedWidth(30);
 
+    pngCheckBox = new QCheckBox("Convert png to jpg", this);
+
     controlLayout->addStretch();
     controlLayout->addWidget(label);
     controlLayout->addSpacing(20);
     controlLayout->addWidget(valueSlider);
     controlLayout->addWidget(compressInput);
+    controlLayout->addSpacing(20);
+    controlLayout->addWidget(pngCheckBox);
     controlLayout->addStretch();
 
     // Action Buttons;
@@ -216,7 +228,6 @@ void MainWindow::clearEverything()
         delete item->widget();
         delete item;
     }
-
 }
 
 void MainWindow::setLoading(bool loading)
@@ -224,7 +235,7 @@ void MainWindow::setLoading(bool loading)
     if (loading)
     {
         qDebug() << "Loading...";
-        dataLabel = new QLabel(this);
+        dataLabel = new QLabel(frameRight);
         dataLabel->setAlignment(Qt::AlignCenter);
 
         dataLabel->setText("Loading...");

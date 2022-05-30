@@ -12,6 +12,7 @@
 #include <QPushButton>
 #include <QLabel>
 #include <QMovie>
+#include <QCheckBox>
 
 QT_BEGIN_NAMESPACE
 namespace Ui
@@ -59,6 +60,7 @@ private:
     QPushButton *saveButton = nullptr;
     QLineEdit *filePathInput = nullptr;
     QPushButton *fileDialogButton = nullptr;
+    QCheckBox *pngCheckBox = nullptr;
 
     FlowLayout *leftFlowLayout = nullptr;
     QScrollArea *leftScrollArea = nullptr;
