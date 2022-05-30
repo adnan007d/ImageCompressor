@@ -73,6 +73,9 @@ private:
     QMovie *loadingGif = nullptr; // loading gif
 
 
+    void clearLeftFrame();
+    void clearRightFrame();
+    void clearVariables();
     void clearEverything();
 
     void setLoading(bool loading);

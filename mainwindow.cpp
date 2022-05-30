@@ -42,6 +42,7 @@ void MainWindow::renderImageCards(QVector<QImage> _images, qint64 size)
     }
     fileSizeLabel->setText(getFileSizeInUnits(initialSize));
     setLoading(false);
+    saveButton->setEnabled(true); // Enabling the save button
     emit doneReading();
 }
 
@@ -69,6 +70,7 @@ void MainWindow::on_OpenButtonPressed()
 
 void MainWindow::on_SaveButtonPressed()
 {
+    clearRightFrame();
     QThread *imageThread = new QThread;
     ImageWriter *writerWorker = new ImageWriter({
         .images = images,
@@ -168,6 +170,7 @@ void MainWindow::InitComponents()
     fileDialogButton->setIcon(QIcon::fromTheme("folder"));
     saveButton->setIcon(QIcon::fromTheme("folder"));
     saveButton->setText(tr("Save"));
+    saveButton->setEnabled(false); // Disabled by default;
 
     filePathInput = new QLineEdit(QDir::homePath(), this);
     filePathInput->setReadOnly(true);
@@ -210,19 +213,19 @@ QString MainWindow::getFileSizeInUnits(const qint64 &size)
         return QString::number(size * 10 / mb) + " KB";
 }
 
-void MainWindow::clearEverything()
+void MainWindow::clearLeftFrame()
 {
-    initialSize = 0;
-    images.clear();
-    fileNames.clear();
-
     QLayoutItem *item;
     while ((item = leftFlowLayout->takeAt(0)))
     {
         delete item->widget();
         delete item;
     }
+}
 
+void MainWindow::clearRightFrame()
+{
+    QLayoutItem *item;
     while ((item = rightFrameLayout->takeAt(0)))
     {
         delete item->widget();
@@ -230,10 +233,30 @@ void MainWindow::clearEverything()
     }
 }
 
+void MainWindow::clearVariables()
+{
+    initialSize = 0;
+    images.clear();
+    fileNames.clear();
+    pngCheckBox->setChecked(false);
+    saveButton->setEnabled(false);
+}
+
+void MainWindow::clearEverything()
+{
+    clearVariables();
+    clearLeftFrame();
+    clearRightFrame();
+}
+
 void MainWindow::setLoading(bool loading)
 {
     if (loading)
     {
+        openButton->setEnabled(false);
+        saveButton->setEnabled(false);
+        fileDialogButton->setEnabled(false);
+
         qDebug() << "Loading...";
         dataLabel = new QLabel(frameRight);
         dataLabel->setAlignment(Qt::AlignCenter);
@@ -245,6 +268,10 @@ void MainWindow::setLoading(bool loading)
     }
     else
     {
+        openButton->setEnabled(true);
+        saveButton->setEnabled(true);
+        fileDialogButton->setEnabled(true);
+
         loadingGif->stop();
         dataLabel->setText("");
         qDebug() << "Not Loading";
