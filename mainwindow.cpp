@@ -32,8 +32,8 @@ MainWindow::~MainWindow()
 
 void MainWindow::renderImageCards(QVector<QImage> _images, qint64 size)
 {
-    images = qMove(_images);
-    initialSize = qMove(size);
+    images = std::move(_images);
+    initialSize = std::move(size);
 
     for (const auto &image : images)
     {
@@ -53,7 +53,7 @@ void MainWindow::on_OpenButtonPressed()
     {
         clearEverything();
 
-        fileNames = qMove(_fileNames);
+        fileNames = std::move(_fileNames);
         QThread *imageThread = new QThread;
         ImageReader *readerWorker = new ImageReader(fileNames);
 
@@ -199,7 +199,7 @@ void MainWindow::InitSignalSlots()
                 QString path = QFileDialog::getExistingDirectory(this, "Select Destination Folder", filePathInput->text());
                 if (!path.isNull())
                 {
-                    filePathInput->setText(qMove(path));
+                    filePathInput->setText(std::move(path));
                 }
             });
 }

@@ -3,7 +3,7 @@
 #include <QFileInfo>
 #include <QImageWriter>
 
-ImageWriter::ImageWriter(CompressOptions _options) : options{qMove(_options)}
+ImageWriter::ImageWriter(CompressOptions _options) : options{std::move(_options)}
 {
 }
 

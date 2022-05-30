@@ -3,7 +3,7 @@
 #include <QFileInfo>
 #include <QImageReader>
 
-ImageReader::ImageReader(QStringList _fileNames) : fileNames{qMove(_fileNames)}
+ImageReader::ImageReader(QStringList _fileNames) : fileNames{std::move(_fileNames)}
 {
 }
 
