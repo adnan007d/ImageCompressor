@@ -19,6 +19,9 @@ MainWindow::MainWindow(QWidget *parent)
     ui->setupUi(this);
     this->setMinimumWidth(850);
 
+    this->setWindowIcon(QIcon(":icon.jpg"));
+    this->setWindowTitle("Image Compressor");
+
     loadingGif = new QMovie(":loading.gif", "gif", this);
 
     InitComponents();
@@ -97,7 +100,7 @@ void MainWindow::writeFinished(qint64 size)
     dataLabel = new QLabel(frameRight);
     dataLabel->setText(
         "<b>Compression Done Successfully</b><br /> Saved to <a href='file://" +
-        filePathInput->text() + "'>/tmp</a><br />previous size = " +
+        filePathInput->text() + "'>" + filePathInput->text() + "</a><br />previous size = " +
         getFileSizeInUnits(initialSize) + "<br /> new size = " +
         getFileSizeInUnits(size) + "<br />Reduced: <b>" +
         getFileSizeInUnits(initialSize - size) + "</b>");
@@ -165,10 +168,10 @@ void MainWindow::InitComponents()
     saveButton = new QPushButton(actionWidget);
     fileDialogButton = new QPushButton(actionWidget);
 
-    openButton->setIcon(QIcon::fromTheme("image"));
+    openButton->setIcon(QIcon::fromTheme("image", QIcon(":image.png")));
     openButton->setText(tr("Open"));
-    fileDialogButton->setIcon(QIcon::fromTheme("folder"));
-    saveButton->setIcon(QIcon::fromTheme("folder"));
+    fileDialogButton->setIcon(QIcon::fromTheme("folder", QIcon(":folder.png")));
+    saveButton->setIcon(QIcon::fromTheme("folder", QIcon(":folder.png")));
     saveButton->setText(tr("Save"));
     saveButton->setEnabled(false); // Disabled by default;
 

@@ -42,7 +42,7 @@ void ImageWriter::WriteImagesConvertPng()
     {
         f.setFile(fileNames[i]);
         const auto fileName = f.fileName();
-        const int dotIndex = find_from_end(fileName);
+        const size_t dotIndex = find_from_end(fileName);
         const QString destinationPath = destination + "/COMPRESSED" + fileName.left(dotIndex) + ".jpg";
         f.setFile(destinationPath);
         QImageWriter writer = QImageWriter(destinationPath);
@@ -55,7 +55,7 @@ void ImageWriter::WriteImagesConvertPng()
 
 void ImageWriter::start()
 {
-    if(options.convertPNG)
+    if (options.convertPNG)
         WriteImagesConvertPng();
     else
         WriteImages();

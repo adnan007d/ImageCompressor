@@ -17,7 +17,7 @@ ImageCard::ImageCard(const QImage &image, QWidget *parent) : QWidget{parent}, im
     imageLabel->setAlignment(Qt::AlignCenter);
 
     viewButton = new QPushButton(this);
-    viewButton->setIcon(QIcon::fromTheme("view-hidden"));
+    viewButton->setIcon(QIcon::fromTheme("view-hidden", QIcon(":view.png")));
 
     cardLayout->addWidget(imageLabel);
     cardLayout->addWidget(viewButton);

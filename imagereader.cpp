@@ -18,6 +18,7 @@ void ImageReader::ReadImages()
         f.setFile(fileName);
         size += f.size();
         QImageReader reader = QImageReader(fileName);
+        reader.setAutoTransform(true);
         images.push_back(reader.read());
     }
     emit finished(images, size);
