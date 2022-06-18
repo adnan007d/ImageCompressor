@@ -43,7 +43,11 @@ private:
     void InitComponents();
     void resizeEvent(QResizeEvent *event);
     void InitSignalSlots();
-    QString getFileSizeInUnits(const qint64 &size);
+    inline QString getFileSizeInUnits(const qint64 &size);
+    void InitLeftFrame();
+    void InitRightFrame();
+    void InitControlFrame();
+    void InitActionFrame();
 
     Ui::MainWindow *ui;
 

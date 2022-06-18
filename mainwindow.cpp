@@ -76,11 +76,11 @@ void MainWindow::on_SaveButtonPressed()
     clearRightFrame();
     QThread *imageThread = new QThread;
     ImageWriter *writerWorker = new ImageWriter({
-        .images = images,
-        .fileNames = fileNames,
-        .destinationDirectory = filePathInput->text(),
-        .quality = 100 - valueSlider->value(),
-        .convertPNG = pngCheckBox->isChecked(),
+        images,
+        fileNames,
+        filePathInput->text(),
+        100 - valueSlider->value(),
+        pngCheckBox->isChecked(),
     });
 
     writerWorker->moveToThread(imageThread);
@@ -116,73 +116,13 @@ void MainWindow::writeFinished(qint64 size)
 
 void MainWindow::InitComponents()
 {
-    // Left Frame
-    frameLeft = new QFrame(this);
+    InitLeftFrame();
 
-    leftScrollArea = new QScrollArea(frameLeft);
-    leftScrollAreaWidget = new QWidget(leftScrollArea);
+    InitRightFrame();
 
-    leftScrollArea->setWidgetResizable(true);
+    InitControlFrame();
 
-    leftFlowLayout = new FlowLayout(leftScrollAreaWidget);
-
-    leftScrollArea->setWidget(leftScrollAreaWidget);
-
-    // Right Frame
-    frameRight = new QFrame(this);
-
-    rightFrameLayout = new QVBoxLayout(frameRight);
-    fileSizeLabel = new QLabel(this);
-    fileSizeLabel->setAlignment(Qt::AlignCenter);
-
-    // Slider and inputs
-    controlWidget = new QWidget(this);
-    controlLayout = new QHBoxLayout(controlWidget);
-    controlLayout->setAlignment(Qt::AlignCenter);
-
-    QLabel *label = new QLabel(tr("Adjust the compression value (0-99)"), this);
-
-    valueSlider = new QSlider(Qt::Horizontal, this);
-    valueSlider->setValue(defaultValue);
-
-    compressInput = new QLineEdit(tr(defaultValueS), this);
-    compressInput->setValidator(new QIntValidator(0, 99, this));
-    compressInput->setFixedWidth(30);
-
-    pngCheckBox = new QCheckBox("Convert png to jpg", this);
-
-    controlLayout->addStretch();
-    controlLayout->addWidget(label);
-    controlLayout->addSpacing(20);
-    controlLayout->addWidget(valueSlider);
-    controlLayout->addWidget(compressInput);
-    controlLayout->addSpacing(20);
-    controlLayout->addWidget(pngCheckBox);
-    controlLayout->addStretch();
-
-    // Action Buttons;
-    actionWidget = new QWidget(this);
-    actionLayout = new QHBoxLayout(actionWidget);
-
-    openButton = new QPushButton(actionWidget);
-    saveButton = new QPushButton(actionWidget);
-    fileDialogButton = new QPushButton(actionWidget);
-
-    openButton->setIcon(QIcon::fromTheme("image", QIcon(":image.png")));
-    openButton->setText(tr("Open"));
-    fileDialogButton->setIcon(QIcon::fromTheme("folder", QIcon(":folder.png")));
-    saveButton->setIcon(QIcon::fromTheme("folder", QIcon(":folder.png")));
-    saveButton->setText(tr("Save"));
-    saveButton->setEnabled(false); // Disabled by default;
-
-    filePathInput = new QLineEdit(QDir::homePath(), this);
-    filePathInput->setReadOnly(true);
-
-    actionLayout->addWidget(openButton);
-    actionLayout->addStretch();
-    actionLayout->addWidget(saveButton);
-    actionLayout->addWidget(filePathInput);
-    actionLayout->addWidget(fileDialogButton);
+    InitActionFrame();
 }
 
 void MainWindow::InitSignalSlots()
@@ -207,13 +147,90 @@ void MainWindow::InitSignalSlots()
             });
 }
 
-QString MainWindow::getFileSizeInUnits(const qint64 &size)
+void MainWindow::InitLeftFrame()
+{
+    frameLeft = new QFrame(this);
+
+    leftScrollArea = new QScrollArea(frameLeft);
+    leftScrollAreaWidget = new QWidget(leftScrollArea);
+
+    leftScrollArea->setWidgetResizable(true);
+
+    leftFlowLayout = new FlowLayout(leftScrollAreaWidget);
+
+    leftScrollArea->setWidget(leftScrollAreaWidget);
+}
+
+void MainWindow::InitRightFrame()
+{
+    frameRight = new QFrame(this);
+
+    rightFrameLayout = new QVBoxLayout(frameRight);
+    fileSizeLabel = new QLabel(this);
+    fileSizeLabel->setAlignment(Qt::AlignCenter);
+}
+
+void MainWindow::InitControlFrame()
+{
+    controlWidget = new QWidget(this);
+    controlLayout = new QHBoxLayout(controlWidget);
+    controlLayout->setAlignment(Qt::AlignCenter);
+
+    QLabel *label = new QLabel(tr("Adjust the compression value (0-99)"), this);
+
+    valueSlider = new QSlider(Qt::Horizontal, this);
+    valueSlider->setValue(defaultValue);
+
+    compressInput = new QLineEdit(tr(defaultValueS), this);
+    compressInput->setValidator(new QIntValidator(0, 99, this));
+    compressInput->setFixedWidth(30);
+
+    pngCheckBox = new QCheckBox("Convert png to jpg", this);
+
+    controlLayout->addStretch();
+    controlLayout->addWidget(label);
+    controlLayout->addSpacing(20);
+    controlLayout->addWidget(valueSlider);
+    controlLayout->addWidget(compressInput);
+    controlLayout->addSpacing(20);
+    controlLayout->addWidget(pngCheckBox);
+    controlLayout->addStretch();
+}
+
+void MainWindow::InitActionFrame()
+{
+    // Action Buttons;
+    actionWidget = new QWidget(this);
+    actionLayout = new QHBoxLayout(actionWidget);
+
+    openButton = new QPushButton(actionWidget);
+    saveButton = new QPushButton(actionWidget);
+    fileDialogButton = new QPushButton(actionWidget);
+    
+    openButton->setIcon(QIcon::fromTheme("image", QIcon(":image.png")));
+    openButton->setText(tr("Open"));
+    fileDialogButton->setIcon(QIcon::fromTheme("folder", QIcon(":folder.png")));
+    saveButton->setIcon(QIcon::fromTheme("folder", QIcon(":folder.png")));
+    saveButton->setText(tr("Save"));
+    saveButton->setEnabled(false); // Disabled by default;
+
+    filePathInput = new QLineEdit(QDir::homePath(), this);
+    filePathInput->setReadOnly(true);
+
+    actionLayout->addWidget(openButton);
+    actionLayout->addStretch();
+    actionLayout->addWidget(saveButton);
+    actionLayout->addWidget(filePathInput);
+    actionLayout->addWidget(fileDialogButton);
+}
+
+inline QString MainWindow::getFileSizeInUnits(const qint64 &size)
 {
     const double mb = 1000000.0;
     if (initialSize > mb)
         return QString::number(size / mb) + " MB";
     else
-        return QString::number(size * 10 / mb) + " KB";
+        return QString::number(size * 1000 / mb) + " KB";
 }
 
 void MainWindow::clearLeftFrame()
