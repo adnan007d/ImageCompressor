@@ -46,6 +46,7 @@ private:
     void InitSignalSlots();
     inline QString getFileSizeInUnits(const qint64 &size);
     void InitLeftFrame();
+    void InitMidFrame();
     void InitRightFrame();
     void InitControlFrame();
     void InitActionFrame();
@@ -73,12 +74,17 @@ private:
     QLabel *fileSizeLabel = nullptr;
 
     QFrame *frameRight = nullptr;
-    QVBoxLayout *rightFrameLayout = nullptr;
+    FlowLayout *rightFlowLayout = nullptr;
+    QScrollArea *rightScrollArea = nullptr;
+    QWidget *rightScrollAreaWidget = nullptr;
+
+    QFrame *frameMid = nullptr;
+    QVBoxLayout *midFrameLayout = nullptr;
     QLabel *dataLabel = nullptr;
     QMovie *loadingGif = nullptr; // loading gif
 
-
     void clearLeftFrame();
+    void clearMidFrame();
     void clearRightFrame();
     void clearVariables();
     void clearEverything();
@@ -92,5 +98,7 @@ private:
 
     const int defaultValue = 80;
     const char defaultValueS[3] = "80";
+    // static constexpr int loadginGifWidth = 220;
+    // static constexpr int loadginGifHeight = 220;
 };
 #endif // MAINWINDOW_H

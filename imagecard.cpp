@@ -15,14 +15,14 @@ ImageCard::ImageCard(QImage &&image, QString &&size, QWidget *parent) : QWidget(
 
 void ImageCard::InitComponents()
 {
-    this->setFixedSize(200, 175);
+    this->setFixedSize(150, 125);
     cardWidget = new QWidget(this);
     cardLayout = new QVBoxLayout(cardWidget);
     imageLabel = new QLabel("Hello", cardWidget);
     sizeLabel = new QLabel(m_size, this);
 
     QPixmap pixmap = QPixmap::fromImage(imageRef);
-    imageLabel->setFixedSize(150, 75);
+    imageLabel->setFixedSize(100, 50);
     pixmap = pixmap.scaled(imageLabel->width(), imageLabel->height(), Qt::KeepAspectRatio, Qt::SmoothTransformation);
     imageLabel->setPixmap(pixmap);
     imageLabel->setAlignment(Qt::AlignCenter);

@@ -17,7 +17,7 @@ MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent), ui(new Ui::MainWindow)
 {
     ui->setupUi(this);
-    this->setMinimumWidth(850);
+    this->setMinimumWidth(1000);
 
     this->setWindowIcon(QIcon(":icon.jpg"));
     this->setWindowTitle("Image Compressor");
@@ -36,6 +36,8 @@ MainWindow::~MainWindow()
 void MainWindow::InitComponents()
 {
     InitLeftFrame();
+
+    InitMidFrame();
 
     InitRightFrame();
 
@@ -78,15 +80,29 @@ void MainWindow::InitLeftFrame()
     leftFlowLayout = new FlowLayout(leftScrollAreaWidget);
 
     leftScrollArea->setWidget(leftScrollAreaWidget);
+
+    fileSizeLabel = new QLabel(this);
+    fileSizeLabel->setAlignment(Qt::AlignCenter);
+}
+
+void MainWindow::InitMidFrame()
+{
+    frameMid = new QFrame(this);
+    midFrameLayout = new QVBoxLayout(frameMid);
 }
 
 void MainWindow::InitRightFrame()
 {
     frameRight = new QFrame(this);
 
-    rightFrameLayout = new QVBoxLayout(frameRight);
-    fileSizeLabel = new QLabel(this);
-    fileSizeLabel->setAlignment(Qt::AlignCenter);
+    rightScrollArea = new QScrollArea(frameRight);
+    rightScrollAreaWidget = new QWidget(rightScrollArea);
+
+    rightScrollArea->setWidgetResizable(true);
+
+    rightFlowLayout = new FlowLayout(rightScrollAreaWidget);
+
+    rightScrollArea->setWidget(rightScrollAreaWidget);
 }
 
 void MainWindow::InitControlFrame()
@@ -153,10 +169,20 @@ void MainWindow::clearLeftFrame()
     }
 }
 
+void MainWindow::clearMidFrame()
+{
+    QLayoutItem *item;
+    while ((item = midFrameLayout->takeAt(0)))
+    {
+        delete item->widget();
+        delete item;
+    }
+}
+
 void MainWindow::clearRightFrame()
 {
     QLayoutItem *item;
-    while ((item = rightFrameLayout->takeAt(0)))
+    while ((item = rightFlowLayout->takeAt(0)))
     {
         delete item->widget();
         delete item;
@@ -175,6 +201,7 @@ void MainWindow::clearVariables()
 void MainWindow::clearEverything()
 {
     clearVariables();
+    clearMidFrame();
     clearLeftFrame();
     clearRightFrame();
 }
@@ -258,8 +285,8 @@ void MainWindow::writeFinished(qint64 size)
     connect(resultOpenButton, &QPushButton::clicked, this, [this]()
             { QDesktopServices::openUrl(QUrl::fromLocalFile(filePathInput->text())); });
 
-    rightFrameLayout->addWidget(dataLabel);
-    rightFrameLayout->addWidget(resultOpenButton);
+    midFrameLayout->addWidget(dataLabel);
+    midFrameLayout->addWidget(resultOpenButton);
 }
 
 inline QString MainWindow::getFileSizeInUnits(const qint64 &size)
@@ -280,12 +307,14 @@ void MainWindow::setLoading(bool loading)
         fileDialogButton->setEnabled(false);
 
         qDebug() << "Loading...";
-        dataLabel = new QLabel(frameRight);
+        dataLabel = new QLabel(frameMid);
+        dataLabel->setFixedSize(frameMid->width(), frameMid->width());
+        dataLabel->setScaledContents(true);
         dataLabel->setAlignment(Qt::AlignCenter);
 
         dataLabel->setText("Loading...");
         dataLabel->setMovie(loadingGif);
-        rightFrameLayout->addWidget(dataLabel, 0, Qt::AlignCenter);
+        midFrameLayout->addWidget(dataLabel, 0, Qt::AlignCenter);
         loadingGif->start();
     }
     else
@@ -297,7 +326,7 @@ void MainWindow::setLoading(bool loading)
         loadingGif->stop();
         dataLabel->setText("");
         qDebug() << "Not Loading";
-        rightFrameLayout->removeWidget(dataLabel);
+        midFrameLayout->removeWidget(dataLabel);
         delete dataLabel;
     }
 }
@@ -312,16 +341,23 @@ void MainWindow::resizeEvent(QResizeEvent *event)
     const int _5Height = (5 * height) / 100;
     const int _5Width = (5 * width) / 100;
 
-    // 50% width 5% * 10 = 50%
-    const int frameWidth = _5Width * 10;
+    // 35% width 5% * 7 = 35%
+    const int frameWidth = _5Width * 7;
     // 70% height
     const int frameHeight = _5Height * 14;
 
     frameLeft->setGeometry(_5Width, 0, frameWidth, frameHeight);
     leftScrollArea->setGeometry(0, 0, frameWidth, frameHeight);
-    frameRight->setGeometry(width - _5Width * 6 - _5Width, 0, _5Width * 6, frameHeight);
 
     fileSizeLabel->setGeometry(_5Width, frameHeight, frameWidth, 50);
+
+    frameRight->setGeometry(width - _5Width * 7 - _5Width, 0, frameWidth, frameHeight);
+    rightScrollArea->setGeometry(0, 0, frameWidth, frameHeight);
+
+    const int midFrameWidth = _5Width * 3;
+    const int midFrameHeight = _5Width * 4;
+
+    frameMid->setGeometry(frameWidth + _5Width * 1.5, height / 2 - midFrameHeight, midFrameWidth, midFrameHeight);
 
     controlWidget->setGeometry(0, _5Height * 15, width, 100);
     actionWidget->setGeometry(_5Width, _5Height * 17, width - _5Width * 2, 100);
