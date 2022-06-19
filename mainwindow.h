@@ -13,6 +13,7 @@
 #include <QLabel>
 #include <QMovie>
 #include <QCheckBox>
+#include "imageconfig.h"
 
 QT_BEGIN_NAMESPACE
 namespace Ui
@@ -34,7 +35,7 @@ signals:
     void doneWriting();
 
 public slots:
-    void renderImageCards(QVector<QImage> _images, qint64 size);
+    void renderImageCards(std::vector<ImageConfig> _images, qint64 size);
     void on_OpenButtonPressed();
     void on_SaveButtonPressed();
     void writeFinished(qint64 size);

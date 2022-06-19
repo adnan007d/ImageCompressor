@@ -1,6 +1,7 @@
 #include "imagereader.h"
 
 #include <QFileInfo>
+#include <opencv2/imgproc.hpp>
 #include <QImageReader>
 
 ImageReader::ImageReader(QStringList _fileNames) : fileNames{std::move(_fileNames)}
@@ -9,7 +10,7 @@ ImageReader::ImageReader(QStringList _fileNames) : fileNames{std::move(_fileName
 
 void ImageReader::ReadImages()
 {
-    QVector<QImage> images{};
+    std::vector<ImageConfig> images{};
     images.reserve(fileNames.size());
     QFileInfo f;
     qint64 size = 0;
@@ -17,9 +18,7 @@ void ImageReader::ReadImages()
     {
         f.setFile(fileName);
         size += f.size();
-        QImageReader reader = QImageReader(fileName);
-        reader.setAutoTransform(true);
-        images.push_back(reader.read());
+        images.push_back({cv::imread(fileName.toStdString()), f.size()});
     }
     emit finished(images, size);
 }

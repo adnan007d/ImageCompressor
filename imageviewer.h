@@ -14,6 +14,7 @@ private:
     QLabel *imageLabel = nullptr;
 
     void resizeEvent(QResizeEvent *event);
+    QPixmap getScaledPixmap();
 };
 
 #endif // IMAGEVIEWER_H

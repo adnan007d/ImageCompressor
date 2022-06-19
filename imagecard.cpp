@@ -5,6 +5,16 @@
 
 ImageCard::ImageCard(const QImage &image, QWidget *parent) : QWidget{parent}, imageRef{image}
 {
+    InitComponents();
+}
+
+ImageCard::ImageCard(QImage &&image, QWidget *parent) : QWidget(parent), imageRef{std::move(image)}
+{
+    InitComponents();
+}
+
+void ImageCard::InitComponents()
+{
     this->setFixedSize(150, 125);
     cardWidget = new QWidget(this);
     cardLayout = new QVBoxLayout(cardWidget);

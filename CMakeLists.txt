@@ -11,7 +11,7 @@ set(CMAKE_AUTORCC ON)
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-find_package(QT NAMES Qt6 Qt5 REQUIRED COMPONENTS Widgets)
+find_package(QT NAMES Qt6 REQUIRED COMPONENTS Widgets)
 find_package(Qt${QT_VERSION_MAJOR} REQUIRED COMPONENTS Widgets)
 find_package( OpenCV REQUIRED )
 
@@ -27,6 +27,7 @@ set(PROJECT_SOURCES
         imagewriter.h
         flowlayout.h
         mainwindow.h
+        imageconfig.h
         imagecard.cpp
         imageviewer.cpp
         imagereader.cpp
