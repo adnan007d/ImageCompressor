@@ -11,15 +11,17 @@ class ImageCard : public QWidget
 {
     Q_OBJECT
 public:
-    ImageCard(const QImage &image, QWidget *parent = nullptr);
-    ImageCard(QImage &&image, QWidget *parent = nullptr);
+    ImageCard(const QImage &image, const QString &size, QWidget *parent = nullptr);
+    ImageCard(QImage &&image, QString &&size, QWidget *parent = nullptr);
 
     void InitComponents();
 
 private:
-    QImage imageRef;
+    QImage imageRef{};
+    QString m_size{};
 
     QLabel *imageLabel = nullptr;
+    QLabel *sizeLabel = nullptr;
     QPushButton *viewButton = nullptr;
     QWidget *cardWidget = nullptr;
     QVBoxLayout *cardLayout = nullptr;

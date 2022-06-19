@@ -185,7 +185,10 @@ void MainWindow::renderImageCards(std::vector<ImageConfig> imageConfigs, qint64 
 
     for (const auto &[imageMat, size] : imageConfigs)
     {
-        ImageCard *card = new ImageCard(QImage((uchar *)imageMat.data, imageMat.cols, imageMat.rows, imageMat.step1(), QImage::Format_RGB888).rgbSwapped(), frameLeft);
+        ImageCard *card = new ImageCard(
+            QImage((uchar *)imageMat.data, imageMat.cols, imageMat.rows, imageMat.step1(), QImage::Format_RGB888).rgbSwapped(),
+            getFileSizeInUnits(size),
+            frameLeft);
         leftFlowLayout->addWidget(card);
     }
     fileSizeLabel->setText(getFileSizeInUnits(initialSize));
