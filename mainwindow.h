@@ -32,12 +32,15 @@ public:
 
 signals:
     void doneReading();
+    void doneConverting();
     void doneWriting();
 
 public slots:
     void renderImageCards(std::vector<ImageConfig> _images, qint64 size);
     void on_OpenButtonPressed();
     void on_SaveButtonPressed();
+    void on_ConvertButtonPressed();
+    void on_ConvertFinished(std::vector<std::vector<uchar>> convertedBuffer);
     void writeFinished(qint64 size);
 
 private:
@@ -67,6 +70,7 @@ private:
     QLineEdit *filePathInput = nullptr;
     QPushButton *fileDialogButton = nullptr;
     QCheckBox *pngCheckBox = nullptr;
+    QPushButton *convertButton = nullptr;
 
     FlowLayout *leftFlowLayout = nullptr;
     QScrollArea *leftScrollArea = nullptr;
@@ -81,7 +85,7 @@ private:
     QFrame *frameMid = nullptr;
     QVBoxLayout *midFrameLayout = nullptr;
     QLabel *dataLabel = nullptr;
-    QMovie *loadingGif = nullptr; // loading gif
+    QMovie *loadingGif = nullptr;
 
     void clearLeftFrame();
     void clearMidFrame();
@@ -91,7 +95,7 @@ private:
 
     void setLoading(bool loading);
 
-    QVector<QImage> images{};
+    std::vector<cv::Mat> images{};
     QStringList fileNames{};
 
     qint64 initialSize = 0;

@@ -28,11 +28,13 @@ set(PROJECT_SOURCES
         flowlayout.h
         mainwindow.h
         imageconfig.h
+        convertimage.h
         imagecard.cpp
         imageviewer.cpp
         imagereader.cpp
         imagewriter.cpp
         flowlayout.cpp
+        convertimage.cpp
         mainwindow.ui
         myapp.rc
         icon.qrc

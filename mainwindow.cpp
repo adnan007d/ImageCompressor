@@ -1,6 +1,7 @@
 #include "imagecard.h"
 #include "imagereader.h"
 #include "imagewriter.h"
+#include "convertimage.h"
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
 #include <QFileDialog>
@@ -55,6 +56,7 @@ void MainWindow::InitSignalSlots()
 
     connect(openButton, &QPushButton::clicked, this, &MainWindow::on_OpenButtonPressed);
     connect(saveButton, &QPushButton::clicked, this, &MainWindow::on_SaveButtonPressed);
+    connect(convertButton, &QPushButton::clicked, this, &MainWindow::on_ConvertButtonPressed);
 
     // Selecting Destination Directory
     connect(fileDialogButton, &QPushButton::clicked, this,
@@ -122,6 +124,9 @@ void MainWindow::InitControlFrame()
 
     pngCheckBox = new QCheckBox("Convert png to jpg", this);
 
+    convertButton = new QPushButton("convert", this);
+    convertButton->setEnabled(false);
+
     controlLayout->addStretch();
     controlLayout->addWidget(label);
     controlLayout->addSpacing(20);
@@ -129,6 +134,7 @@ void MainWindow::InitControlFrame()
     controlLayout->addWidget(compressInput);
     controlLayout->addSpacing(20);
     controlLayout->addWidget(pngCheckBox);
+    controlLayout->addWidget(convertButton);
     controlLayout->addStretch();
 }
 
@@ -210,17 +216,18 @@ void MainWindow::renderImageCards(std::vector<ImageConfig> imageConfigs, qint64 
 {
     initialSize = std::move(size);
 
-    for (const auto &[imageMat, size] : imageConfigs)
+    for (auto &[imageMat, size] : imageConfigs)
     {
         ImageCard *card = new ImageCard(
             QImage((uchar *)imageMat.data, imageMat.cols, imageMat.rows, imageMat.step1(), QImage::Format_RGB888).rgbSwapped(),
             getFileSizeInUnits(size),
             frameLeft);
         leftFlowLayout->addWidget(card);
+        images.push_back(std::move(imageMat));
     }
     fileSizeLabel->setText(getFileSizeInUnits(initialSize));
     setLoading(false);
-    saveButton->setEnabled(true); // Enabling the save button
+    convertButton->setEnabled(true);
     emit doneReading();
 }
 
@@ -230,6 +237,7 @@ void MainWindow::on_OpenButtonPressed()
     if (!_fileNames.isEmpty())
     {
         clearEverything();
+        saveButton->setEnabled(false);
 
         fileNames = std::move(_fileNames);
         QThread *imageThread = new QThread;
@@ -248,51 +256,89 @@ void MainWindow::on_OpenButtonPressed()
 
 void MainWindow::on_SaveButtonPressed()
 {
+    // clearRightFrame();
+    // QThread *imageThread = new QThread;
+    // ImageWriter *writerWorker = new ImageWriter({
+    //     images,
+    //     fileNames,
+    //     filePathInput->text(),
+    //     100 - valueSlider->value(),
+    //     pngCheckBox->isChecked(),
+    // });
+
+    // writerWorker->moveToThread(imageThread);
+    // connect(imageThread, &QThread::started, writerWorker, &ImageWriter::start);
+    // connect(writerWorker, &ImageWriter::finished, this, &MainWindow::writeFinished);
+    // connect(this, &MainWindow::doneWriting, imageThread, &QThread::quit);
+    // connect(imageThread, &QThread::finished, writerWorker, &ImageWriter::deleteLater);
+    // setLoading(true);
+    // imageThread->start();
+}
+
+void MainWindow::on_ConvertButtonPressed()
+{
     clearRightFrame();
     QThread *imageThread = new QThread;
-    ImageWriter *writerWorker = new ImageWriter({
+    ConvertImage *convertWorker = new ConvertImage(ConvertOptions{
         images,
         fileNames,
-        filePathInput->text(),
         100 - valueSlider->value(),
-        pngCheckBox->isChecked(),
-    });
+        pngCheckBox->isChecked()});
 
-    writerWorker->moveToThread(imageThread);
-    connect(imageThread, &QThread::started, writerWorker, &ImageWriter::start);
-    connect(writerWorker, &ImageWriter::finished, this, &MainWindow::writeFinished);
-    connect(this, &MainWindow::doneWriting, imageThread, &QThread::quit);
-    connect(imageThread, &QThread::finished, writerWorker, &ImageWriter::deleteLater);
+    convertWorker->moveToThread(imageThread);
+    connect(imageThread, &QThread::started, convertWorker, &ConvertImage::start);
+    connect(convertWorker, &ConvertImage::finished, this, &MainWindow::on_ConvertFinished);
+    connect(this, &MainWindow::doneConverting, imageThread, &QThread::quit);
+    connect(imageThread, &QThread::finished, convertWorker, &ConvertImage::deleteLater);
     setLoading(true);
     imageThread->start();
 }
 
+void MainWindow::on_ConvertFinished(std::vector<std::vector<uchar>> convertedBuffer)
+{
+    int i = 0;
+    for (const auto &buffer : convertedBuffer)
+    {
+        QImage img = QImage::fromData(buffer.data(), buffer.size());
+        ImageCard *card = new ImageCard(
+            img,
+            getFileSizeInUnits(buffer.size()),
+            frameRight);
+        rightFlowLayout->addWidget(card);
+        ++i;
+    }
+    emit doneConverting();
+    // fileSizeLabel->setText(getFileSizeInUnits(initialSize));
+    setLoading(false);
+    saveButton->setEnabled(true); // Enabling the save button
+}
+
 void MainWindow::writeFinished(qint64 size)
 {
-    setLoading(false);
+    // setLoading(false);
 
-    emit doneWriting();
-    dataLabel = new QLabel(frameRight);
-    dataLabel->setText(
-        "<b>Compression Done Successfully</b><br /> Saved to <a href='file://" +
-        filePathInput->text() + "'>" + filePathInput->text() + "</a><br />previous size = " +
-        getFileSizeInUnits(initialSize) + "<br /> new size = " +
-        getFileSizeInUnits(size) + "<br />Reduced: <b>" +
-        getFileSizeInUnits(initialSize - size) + "</b>");
+    // emit doneWriting();
+    // dataLabel = new QLabel(frameRight);
+    // dataLabel->setText(
+    //     "<b>Compression Done Successfully</b><br /> Saved to <a href='file://" +
+    //     filePathInput->text() + "'>" + filePathInput->text() + "</a><br />previous size = " +
+    //     getFileSizeInUnits(initialSize) + "<br /> new size = " +
+    //     getFileSizeInUnits(size) + "<br />Reduced: <b>" +
+    //     getFileSizeInUnits(initialSize - size) + "</b>");
 
-    QPushButton *resultOpenButton = new QPushButton("Open Folder", frameRight);
+    // QPushButton *resultOpenButton = new QPushButton("Open Folder", frameRight);
 
-    connect(resultOpenButton, &QPushButton::clicked, this, [this]()
-            { QDesktopServices::openUrl(QUrl::fromLocalFile(filePathInput->text())); });
+    // connect(resultOpenButton, &QPushButton::clicked, this, [this]()
+    //         { QDesktopServices::openUrl(QUrl::fromLocalFile(filePathInput->text())); });
 
-    midFrameLayout->addWidget(dataLabel);
-    midFrameLayout->addWidget(resultOpenButton);
+    // midFrameLayout->addWidget(dataLabel);
+    // midFrameLayout->addWidget(resultOpenButton);
 }
 
 inline QString MainWindow::getFileSizeInUnits(const qint64 &size)
 {
     const double mb = 1000000.0;
-    if (initialSize > mb)
+    if (size > mb)
         return QString::number(size / mb) + " MB";
     else
         return QString::number(size * 1000 / mb) + " KB";
@@ -305,6 +351,7 @@ void MainWindow::setLoading(bool loading)
         openButton->setEnabled(false);
         saveButton->setEnabled(false);
         fileDialogButton->setEnabled(false);
+        convertButton->setEnabled(false);
 
         qDebug() << "Loading...";
         dataLabel = new QLabel(frameMid);
@@ -322,6 +369,7 @@ void MainWindow::setLoading(bool loading)
         openButton->setEnabled(true);
         saveButton->setEnabled(true);
         fileDialogButton->setEnabled(true);
+        convertButton->setEnabled(true);
 
         loadingGif->stop();
         dataLabel->setText("");
