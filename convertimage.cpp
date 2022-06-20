@@ -19,10 +19,11 @@ std::vector<int> ConvertImage::getParamVector(std::string_view extension)
 inline std::string_view ConvertImage::getExtension(std::string_view path)
 {
     auto end = path.size() - 1;
+
     while (end >= 0)
     {
         if (path[end--] == '.')
-            return std::string_view{path.begin() + end + 1, path.size() - end};
+            return std::string_view(path.begin() + end + 1, path.begin() + path.size() - end);
     }
 
     return "";
@@ -37,7 +38,7 @@ void ConvertImage::convert()
     const auto &fileNames = m_options.fileNames;
 
     int i = 0;
-    for (const auto &imageMat : m_options.imageMats)
+    for (const auto &imageMat : imageMats)
     {
         std::vector<uchar> buffer{};
         const std::string fileName = fileNames[i].toStdString();
