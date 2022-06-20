@@ -2,10 +2,11 @@
 
 ImageViewer::ImageViewer(const QImage &image) : imageRef{image}
 {
+    this->setWindowFlag(Qt::WindowMinimizeButtonHint, true);
+    this->setWindowFlag(Qt::WindowMaximizeButtonHint, true);
 
     imageLabel = new QLabel(this);
     imageLabel->setGeometry(0, 0, width(), height());
-
     imageLabel->setAlignment(Qt::AlignCenter);
 }
 

@@ -317,7 +317,7 @@ void MainWindow::on_ConvertFinished(std::vector<std::vector<uchar>> _convertedBu
     {
 
         ImageCard *card = new ImageCard(
-            QImage::fromData(buffer.data(), buffer.size()),
+            QImage::fromData(buffer.data(), static_cast<int>(buffer.size())),
             getFileSizeInUnits(buffer.size()),
             frameRight);
         rightFlowLayout->addWidget(card);
