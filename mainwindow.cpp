@@ -65,7 +65,18 @@ void MainWindow::InitSignalSlots()
                 QString path = QFileDialog::getExistingDirectory(this, "Select Destination Folder", filePathInput->text());
                 if (!path.isNull())
                 {
-                    filePathInput->setText(std::move(path));
+
+                    if (QFileInfo dir(path); dir.isWritable())
+                    {
+                        filePathInput->setText(std::move(path));
+                        return;
+                    }
+
+                    QMessageBox err(this);
+                    err.setWindowTitle("Permission Denied");
+                    err.setIcon(QMessageBox::Critical);
+                    err.setText("Permission Denied, Can't write to <b>" + path + "</b>");
+                    err.exec();
                 }
             });
 }
@@ -202,14 +213,15 @@ void MainWindow::clearVariables()
     fileNames.clear();
     pngCheckBox->setChecked(false);
     saveButton->setEnabled(false);
+    convertedBuffers.clear();
 }
 
 void MainWindow::clearEverything()
 {
-    clearVariables();
     clearMidFrame();
     clearLeftFrame();
     clearRightFrame();
+    clearVariables();
 }
 
 void MainWindow::renderImageCards(std::vector<ImageConfig> imageConfigs, qint64 size)
@@ -237,6 +249,9 @@ void MainWindow::on_OpenButtonPressed()
     if (!_fileNames.isEmpty())
     {
         clearEverything();
+
+        // To remove the scroll bar
+        rightScrollAreaWidget->setGeometry(rightScrollAreaWidget->x(), rightScrollAreaWidget->y(), frameRight->width(), frameLeft->height());
         saveButton->setEnabled(false);
 
         fileNames = std::move(_fileNames);
@@ -256,23 +271,22 @@ void MainWindow::on_OpenButtonPressed()
 
 void MainWindow::on_SaveButtonPressed()
 {
-    // clearRightFrame();
-    // QThread *imageThread = new QThread;
-    // ImageWriter *writerWorker = new ImageWriter({
-    //     images,
-    //     fileNames,
-    //     filePathInput->text(),
-    //     100 - valueSlider->value(),
-    //     pngCheckBox->isChecked(),
-    // });
 
-    // writerWorker->moveToThread(imageThread);
-    // connect(imageThread, &QThread::started, writerWorker, &ImageWriter::start);
-    // connect(writerWorker, &ImageWriter::finished, this, &MainWindow::writeFinished);
-    // connect(this, &MainWindow::doneWriting, imageThread, &QThread::quit);
-    // connect(imageThread, &QThread::finished, writerWorker, &ImageWriter::deleteLater);
-    // setLoading(true);
-    // imageThread->start();
+    QThread *imageThread = new QThread;
+    ImageWriter *writerWorker = new ImageWriter({
+        convertedBuffers,
+        fileNames,
+        filePathInput->text(),
+        pngCheckBox->isChecked(),
+    });
+
+    writerWorker->moveToThread(imageThread);
+    connect(imageThread, &QThread::started, writerWorker, &ImageWriter::start);
+    connect(writerWorker, &ImageWriter::finished, this, &MainWindow::on_WriteFinished);
+    connect(this, &MainWindow::doneWriting, imageThread, &QThread::quit);
+    connect(imageThread, &QThread::finished, writerWorker, &ImageWriter::deleteLater);
+    setLoading(true);
+    imageThread->start();
 }
 
 void MainWindow::on_ConvertButtonPressed()
@@ -294,45 +308,53 @@ void MainWindow::on_ConvertButtonPressed()
     imageThread->start();
 }
 
-void MainWindow::on_ConvertFinished(std::vector<std::vector<uchar>> convertedBuffer)
+void MainWindow::on_ConvertFinished(std::vector<std::vector<uchar>> _convertedBuffer)
 {
+    convertedBuffers = std::move(_convertedBuffer);
     int i = 0;
-    for (const auto &buffer : convertedBuffer)
+    convertedSize = 0;
+    for (auto &buffer : convertedBuffers)
     {
-        QImage img = QImage::fromData(buffer.data(), buffer.size());
+
         ImageCard *card = new ImageCard(
-            img,
+            QImage::fromData(buffer.data(), buffer.size()),
             getFileSizeInUnits(buffer.size()),
             frameRight);
         rightFlowLayout->addWidget(card);
+        convertedSize += buffer.size();
         ++i;
     }
-    emit doneConverting();
     // fileSizeLabel->setText(getFileSizeInUnits(initialSize));
     setLoading(false);
     saveButton->setEnabled(true); // Enabling the save button
+    emit doneConverting();
 }
 
-void MainWindow::writeFinished(qint64 size)
+void MainWindow::on_WriteFinished()
 {
-    // setLoading(false);
+    setLoading(false);
 
-    // emit doneWriting();
-    // dataLabel = new QLabel(frameRight);
-    // dataLabel->setText(
-    //     "<b>Compression Done Successfully</b><br /> Saved to <a href='file://" +
-    //     filePathInput->text() + "'>" + filePathInput->text() + "</a><br />previous size = " +
-    //     getFileSizeInUnits(initialSize) + "<br /> new size = " +
-    //     getFileSizeInUnits(size) + "<br />Reduced: <b>" +
-    //     getFileSizeInUnits(initialSize - size) + "</b>");
+    emit doneWriting();
 
-    // QPushButton *resultOpenButton = new QPushButton("Open Folder", frameRight);
+    QMessageBox done(this);
 
-    // connect(resultOpenButton, &QPushButton::clicked, this, [this]()
-    //         { QDesktopServices::openUrl(QUrl::fromLocalFile(filePathInput->text())); });
+    done.setWindowTitle("Saved Successfully");
+    done.setIcon(QMessageBox::Information);
+    done.setStandardButtons(QMessageBox::Ok | QMessageBox::Open);
 
-    // midFrameLayout->addWidget(dataLabel);
-    // midFrameLayout->addWidget(resultOpenButton);
+    done.setText(
+        "<b>Compression Done Successfully</b><br /> Saved to <a href='file://" +
+        filePathInput->text() + "'>" + filePathInput->text() + "</a><br />previous size = " +
+        getFileSizeInUnits(initialSize) + "<br /> new size = " +
+        getFileSizeInUnits(convertedSize) + "<br />Reduced: <b>" +
+        getFileSizeInUnits(initialSize - convertedSize) + "</b>");
+
+    auto openButton = done.button(QMessageBox::Open);
+    openButton->setText("Open Folder");
+
+    done.exec();
+    if (done.clickedButton() == openButton)
+        QDesktopServices::openUrl(QUrl::fromLocalFile(filePathInput->text()));
 }
 
 inline QString MainWindow::getFileSizeInUnits(const qint64 &size)

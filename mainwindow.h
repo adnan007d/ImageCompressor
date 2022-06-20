@@ -41,7 +41,7 @@ public slots:
     void on_SaveButtonPressed();
     void on_ConvertButtonPressed();
     void on_ConvertFinished(std::vector<std::vector<uchar>> convertedBuffer);
-    void writeFinished(qint64 size);
+    void on_WriteFinished();
 
 private:
     void InitComponents();
@@ -96,13 +96,13 @@ private:
     void setLoading(bool loading);
 
     std::vector<cv::Mat> images{};
+    std::vector<std::vector<uchar>> convertedBuffers{};
     QStringList fileNames{};
 
     qint64 initialSize = 0;
+    qint64 convertedSize = 0;
 
     const int defaultValue = 80;
     const char defaultValueS[3] = "80";
-    // static constexpr int loadginGifWidth = 220;
-    // static constexpr int loadginGifHeight = 220;
 };
 #endif // MAINWINDOW_H
