@@ -17,7 +17,7 @@ signals:
 public slots:
     void start();
     void quit();
-    std::string_view getExtension(std::string_view path);
+    std::string_view getExtension(std::string_view path, bool convertToJPG = false);
 
 private:
     void convert();

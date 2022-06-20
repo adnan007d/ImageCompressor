@@ -16,17 +16,13 @@ std::vector<int> ConvertImage::getParamVector(std::string_view extension)
     return {cv::IMWRITE_JPEG_QUALITY, m_options.quality};
 }
 
-inline std::string_view ConvertImage::getExtension(std::string_view path)
+inline std::string_view ConvertImage::getExtension(std::string_view s, bool convertToJPG)
 {
-    auto end = path.size() - 1;
+    if (convertToJPG)
+        return ".jpg";
 
-    while (end >= 0)
-    {
-        if (path[end--] == '.')
-            return std::string_view(path.begin() + end + 1, path.begin() + path.size() - end);
-    }
-
-    return "";
+    const auto dotIndex = std::find(s.crbegin(), s.crend(), '.');
+    return std::string_view((dotIndex + 1).base(), s.end());
 }
 
 void ConvertImage::convert()
@@ -43,7 +39,8 @@ void ConvertImage::convert()
         std::vector<uchar> buffer{};
         const std::string fileName = fileNames[i].toStdString();
 
-        const std::string_view extension{getExtension(fileName)};
+        const std::string_view extension{getExtension(fileName, m_options.convertPNG)};
+
         std::vector<int> params{getParamVector(extension)};
 
         cv::imencode(extension.data(), imageMat, buffer, params);
