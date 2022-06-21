@@ -10,14 +10,14 @@ class ConvertImage : public QObject
 public:
     ConvertImage(const ConvertOptions &options);
     ConvertImage(ConvertOptions &&options);
-
+    std::string_view getExtension(std::string_view path, bool convertToJPG = false);
 signals:
     void finished(std::vector<std::vector<uchar>>);
 
 public slots:
     void start();
     void quit();
-    std::string_view getExtension(std::string_view path, bool convertToJPG = false);
+
 
 private:
     void convert();
