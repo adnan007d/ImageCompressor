@@ -13,6 +13,7 @@
 #include <QLabel>
 #include <QMovie>
 #include <QCheckBox>
+#include "imageconfig.h"
 
 QT_BEGIN_NAMESPACE
 namespace Ui
@@ -31,19 +32,27 @@ public:
 
 signals:
     void doneReading();
+    void doneConverting();
     void doneWriting();
 
 public slots:
-    void renderImageCards(QVector<QImage> _images, qint64 size);
+    void renderImageCards(std::vector<ImageConfig> _images, qint64 size);
     void on_OpenButtonPressed();
     void on_SaveButtonPressed();
-    void writeFinished(qint64 size);
+    void on_ConvertButtonPressed();
+    void on_ConvertFinished(std::vector<std::vector<uchar>> convertedBuffer);
+    void on_WriteFinished();
 
 private:
     void InitComponents();
     void resizeEvent(QResizeEvent *event);
     void InitSignalSlots();
-    QString getFileSizeInUnits(const qint64 &size);
+    inline QString getFileSizeInUnits(const qint64 &size);
+    void InitLeftFrame();
+    void InitMidFrame();
+    void InitRightFrame();
+    void InitControlFrame();
+    void InitActionFrame();
 
     Ui::MainWindow *ui;
 
@@ -61,6 +70,7 @@ private:
     QLineEdit *filePathInput = nullptr;
     QPushButton *fileDialogButton = nullptr;
     QCheckBox *pngCheckBox = nullptr;
+    QPushButton *convertButton = nullptr;
 
     FlowLayout *leftFlowLayout = nullptr;
     QScrollArea *leftScrollArea = nullptr;
@@ -68,22 +78,29 @@ private:
     QLabel *fileSizeLabel = nullptr;
 
     QFrame *frameRight = nullptr;
-    QVBoxLayout *rightFrameLayout = nullptr;
-    QLabel *dataLabel = nullptr;
-    QMovie *loadingGif = nullptr; // loading gif
+    FlowLayout *rightFlowLayout = nullptr;
+    QScrollArea *rightScrollArea = nullptr;
+    QWidget *rightScrollAreaWidget = nullptr;
 
+    QFrame *frameMid = nullptr;
+    QVBoxLayout *midFrameLayout = nullptr;
+    QLabel *dataLabel = nullptr;
+    QMovie *loadingGif = nullptr;
 
     void clearLeftFrame();
+    void clearMidFrame();
     void clearRightFrame();
     void clearVariables();
     void clearEverything();
 
     void setLoading(bool loading);
 
-    QVector<QImage> images{};
+    std::vector<cv::Mat> images{};
+    std::vector<std::vector<uchar>> convertedBuffers{};
     QStringList fileNames{};
 
     qint64 initialSize = 0;
+    qint64 convertedSize = 0;
 
     const int defaultValue = 80;
     const char defaultValueS[3] = "80";

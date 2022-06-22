@@ -2,8 +2,9 @@
 #define IMAGEREADER_H
 
 #include <QObject>
-#include <QVector>
+#include <vector>
 #include <QImage>
+#include "imageconfig.h"
 
 class ImageReader : public QObject
 {
@@ -13,7 +14,7 @@ public:
     ImageReader(QStringList fileNames);
 
 signals:
-    void finished(QVector<QImage>, qint64);
+    void finished(std::vector<ImageConfig>, std::size_t);
 
 public slots:
     void start();

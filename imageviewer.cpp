@@ -2,16 +2,17 @@
 
 ImageViewer::ImageViewer(const QImage &image) : imageRef{image}
 {
+    this->setWindowFlag(Qt::WindowMinimizeButtonHint, true);
+    this->setWindowFlag(Qt::WindowMaximizeButtonHint, true);
 
     imageLabel = new QLabel(this);
     imageLabel->setGeometry(0, 0, width(), height());
-
-    QPixmap pixmap = QPixmap();
-    pixmap = pixmap.fromImage(imageRef);
-    pixmap = pixmap.scaled(imageLabel->width(), imageLabel->height(), Qt::KeepAspectRatio, Qt::SmoothTransformation);
-
-    imageLabel->setPixmap(pixmap);
     imageLabel->setAlignment(Qt::AlignCenter);
+}
+
+inline QPixmap ImageViewer::getScaledPixmap()
+{
+    return QPixmap::fromImage(imageRef).scaled(imageLabel->width(), imageLabel->height(), Qt::KeepAspectRatio, Qt::SmoothTransformation);
 }
 
 void ImageViewer::resizeEvent([[maybe_unused]] QResizeEvent *event)
@@ -20,6 +21,6 @@ void ImageViewer::resizeEvent([[maybe_unused]] QResizeEvent *event)
     const int height = this->height();
 
     imageLabel->setGeometry(0, 0, width, height);
-    imageLabel->setPixmap(QPixmap::fromImage(imageRef).scaled(imageLabel->width(), imageLabel->height(), Qt::KeepAspectRatio, Qt::SmoothTransformation));
+    imageLabel->setPixmap(getScaledPixmap());
     imageLabel->update();
 }
